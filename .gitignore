@@ -1,10 +1,19 @@
-package.json
-package-lock.json
-
+# Dependencies and Builds
 node_modules/
+/node_modules
+dist
+dist-ssr
+/build
+/.pnp
+.pnp.js
 
+# Python
 __pycache__/
-# Logs
+*.pyc
+.venv/
+311.pyc
+
+# Logs and Debug
 logs
 *.log
 npm-debug.log*
@@ -12,11 +21,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+/coverage
 
-node_modules
-dist
-dist-ssr
+# Environment
+.env
 *.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Editor directories and files
 .vscode/*
@@ -28,15 +41,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-node_modules/
-.env
-dist/
-*.log
-
-.env
-.venv/
-311.pyc
-
-__pycache__/
-*.pyc
