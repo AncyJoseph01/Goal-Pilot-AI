@@ -1,5 +1,5 @@
 # 1. To create tables: first run : 
-* make sure to download PGvector and PGadmin, `CREATE EXTENSION IF NOT EXISTS vector;` in `PGadmin`, 
+* make sure to download PGvector and PGadmin, `CREATE EXTENSION IF NOT EXISTS vector;` in `PGadmin - Query tool`, 
 *  Then run `python -m app.scripts.create_tables` in the terminal 
 
 # 2. To run swagger start the app
