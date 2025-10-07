@@ -1,3 +1,11 @@
+# 1. To create tables: first run : 
+* make sure to download PGvector and PGadmin, `CREATE EXTENSION IF NOT EXISTS vector;` in `PGadmin - Query tool`, 
+*  Then run `python -m app.scripts.create_tables` in the terminal 
+
+# 2. To run swagger start the app
+* `uvicorn app.main:app --reload`
+* `http://localhost:8000/docs`
+---
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
