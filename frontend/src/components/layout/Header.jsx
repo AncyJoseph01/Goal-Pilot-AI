@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const Header = () => {
+const Header = ({ unreadCount, showNotifications, toggleNotifications, onSearch }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [theme, setTheme] = useState('light');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -33,8 +34,18 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    // Handle logout logic here
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_id');
     navigate('/login');
+  };
+
+  // **SEARCH HANDLER**
+  const handleSearch = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    if (onSearch) {
+      onSearch(term);  // ✅ PASS TO DASHBOARD
+    }
   };
 
   return (
@@ -44,9 +55,12 @@ const Header = () => {
           <h2>{getPageTitle()}</h2>
         </div>
         <div className="header-search">
-          <input 
-            type="text" 
-            placeholder="Search goals, resources..." 
+          {/* ✅ SINGLE SEARCH BAR */}
+          <input
+            type="text"
+            placeholder="Search goals, resources..."
+            value={searchTerm}
+            onChange={handleSearch}
             className="search-input"
           />
         </div>
@@ -54,10 +68,9 @@ const Header = () => {
           <button className="theme-toggle" onClick={toggleTheme}>
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
-          <button className="notification-btn">
-            🔔
-            <span className="notification-badge">3</span>
-          </button>
+          <div className="notifications-bell" onClick={toggleNotifications}>
+            🔔 {unreadCount > 0 && <span className="notification-count">{unreadCount}</span>}
+          </div>
           <div className="avatar">U</div>
           <button onClick={handleLogout} className="btn-secondary">
             Logout

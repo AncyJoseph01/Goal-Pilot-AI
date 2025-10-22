@@ -5,8 +5,34 @@
 # 2. To run swagger start the app
 * `uvicorn app.main:app --reload`
 * `http://localhost:8000/docs`
+--
+# 3. FASTAPI + ALEM BIC SETUP
+
+# a. To initialize Alembic migrations: first run :
+* `alembic init alembic`
+
+# b. To install dependencies: 
+* `pip install -r requirements.txt`
+
+# c. To auto-generate initial schema migration:
+ * `alembic revision --autogenerate -m "initial"`
+
+# d. To apply migration and create tables:
+* `alembic upgrade head`
+
+# e. To run swagger start the app
+* `uvicorn main:app --reload --port 8000`
+* `"http://localhost:8000/docs"`
 ---
-# Getting Started with Create React App
+# 4. To INSTALL from requirements.txt:
+* `pip install -r requirements.txt`
+--- 
+# 5. To CREATE .env file with DB + OpenAI:
+*  create .env file in root folder and add below keys
+* `DATABASE_URL=postgresql+asyncpg://username:password@localhost:5432/database_name`
+* `OPENAI_API_KEY=sk-your-openai-api-key-here`
+---
+#  Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
@@ -14,7 +40,7 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 In the project directory, you can run:
 
-### `npm start`
+### `npm run start`
 
 Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in your browser.

@@ -1,21 +1,18 @@
 from pydantic import BaseModel, EmailStr
+from typing import List
 import uuid
+from datetime import datetime
 
-
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
     email: EmailStr
-
-
-class UserCreate(UserBase):
     password: str
 
-
-class User(UserBase):
+class User(BaseModel):
     id: uuid.UUID
-
+    email: EmailStr
+    
     class Config:
         from_attributes = True
-
 
 class LoginRequest(BaseModel):
     email: EmailStr

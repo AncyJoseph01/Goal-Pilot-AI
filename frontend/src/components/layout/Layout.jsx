@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
-const Layout = ({ children }) => {
+const Layout = ({ children, unreadCount, showNotifications, toggleNotifications }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check if mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth <= 768;
@@ -36,11 +35,8 @@ const Layout = ({ children }) => {
 
   return (
     <div className="layout">
-      {/* Sidebar with toggle functionality */}
       <div className={`sidebar-container ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <Sidebar />
-        
-        {/* Sidebar Toggle Button */}
         <button 
           className="sidebar-toggle"
           onClick={toggleSidebar}
@@ -49,7 +45,6 @@ const Layout = ({ children }) => {
         </button>
       </div>
 
-      {/* Overlay for mobile when sidebar is open */}
       {!sidebarCollapsed && isMobile && (
         <div 
           className="sidebar-overlay"
@@ -57,9 +52,12 @@ const Layout = ({ children }) => {
         />
       )}
 
-      {/* Main Content Area */}
       <div className={`main-content ${sidebarCollapsed ? 'expanded' : ''}`}>
-        <Header />
+        <Header
+          unreadCount={unreadCount}
+          showNotifications={showNotifications}
+          toggleNotifications={toggleNotifications}
+        />
         <main className="content" onClick={closeSidebar}>
           {children}
         </main>
