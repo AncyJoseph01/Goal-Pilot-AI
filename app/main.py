@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import users, goals
+from app.api import users, goals, auth
 from app.db.database import database
 
 app = FastAPI(title="Goal Pilot AI", version="1.0.0")
@@ -16,6 +16,7 @@ app.add_middleware(
 
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(goals.router, prefix="/goals", tags=["goals"])
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 @app.on_event("startup")
 async def startup():

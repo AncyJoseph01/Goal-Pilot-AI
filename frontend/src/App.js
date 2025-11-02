@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import CreateGoal from './pages/CreateGoal';
 import './App.css';
+import GoogleSuccess from './pages/GoogleSuccess';
 
 function App() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -30,14 +31,9 @@ function App() {
   }, []); */
 
   useEffect(() => {
-    setUnreadCount(notifications.filter(n => !n.is_read).length);
-    const token = localStorage.getItem('token');
-    const newAuthState = !!token;
-    if (newAuthState !== authState) {
-      setAuthState(newAuthState); // Update auth state when token changes
-    }
-    console.log('Authentication state:', newAuthState); // Debug log
-  }, [notifications, location, authState]); // Re-run on location or auth state change
+  const token = localStorage.getItem('token');
+  setAuthState(!!token);
+}, [location]);
 
   const toggleNotifications = () => setShowNotifications(!showNotifications);
 
@@ -96,7 +92,14 @@ function App() {
       />
       
       <Route path="*" element={<div>404 - Page Not Found</div>} />
+
+      <Route 
+  path="/google-success" 
+  element={<GoogleSuccess setAuthState={setAuthState} />} 
+/>
     </Routes>
+
+    
   );
 }
 

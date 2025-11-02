@@ -71,6 +71,17 @@ const Login = () => {
           {error && <div className="error-message" style={{ color: 'red', marginTop: '10px' }}>{error}</div>}
         </form>
 
+        <p>Or login with:</p>
+        <button
+        type="button"
+        className="btn-google btn-large"
+        onClick={() => {
+          window.location.href = "http://127.0.0.1:8000/auth/google/login";
+        }}
+      >
+        Google
+      </button>
+
         <p className="signup-link">
           Don't have an account? <a href="/signup">Sign up</a>
         </p>

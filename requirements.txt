@@ -63,3 +63,7 @@ watchfiles==1.1.1
 websockets==15.0.1
 xxhash==3.6.0
 zstandard==0.25.0
+langchain-openai
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+google-api-python-client==2.154.0
