@@ -11,6 +11,7 @@ dist-ssr
 __pycache__/
 *.pyc
 .venv/
+myenv/
 311.pyc
 
 # Logs and Debug
@@ -41,3 +42,5 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+/credentials

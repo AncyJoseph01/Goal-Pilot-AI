@@ -1,120 +1,117 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-const Dashboard = () => {
+const Dashboard = ({ unreadCount, showNotifications, toggleNotifications }) => {
   const [goals, setGoals] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // REMOVED: validateProgress function (not used)
-  // REMOVED: taskDependencies state (not used)
-  
-  const canCompleteTask = (taskId) => {
-    // Hardcoded dependencies since we removed taskDependencies state
-    const dependencies = {
-      2: [1], // Task 2 depends on Task 1
-      3: [1, 2] // Task 3 depends on Task 1 and 2
-    }[taskId] || [];
-    
-    const incompleteDependencies = dependencies.filter(depId => {
-      const depTask = tasks.find(t => t.id === depId);
-      return depTask && !depTask.completed;
-    });
-    
-    return incompleteDependencies.length === 0;
+  const [notifications, setNotifications] = useState([
+    { id: 1, message: 'New goal created: Learn React', created_at: '2025-10-17T10:00:00Z', is_read: false },
+    { id: 2, message: 'Task due today: SQL JOINs', created_at: '2025-10-17T12:00:00Z', is_read: true },
+    { id: 3, message: 'Progress updated: 35%', created_at: '2025-10-17T14:00:00Z', is_read: false },
+  ]);
+
+  // **REAL GOALS FETCH FROM BACKEND**
+  useEffect(() => {
+    const fetchRealGoals = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://127.0.0.1:8000/goals/?user_id=${token}`);
+        
+        if (response.ok) {
+          const realGoals = await response.json();
+          setGoals(realGoals.map(goal => ({
+            id: goal.id,
+            title: goal.title,
+            description: goal.description,
+            progress_percentage: goal.progress * 100 || 0,
+            duration_days: goal.duration_days,
+            status: goal.completed ? 'completed' : 'active',
+            category: 'AI Generated',
+            weekly_schedule: goal.weekly_schedule,
+            resources: goal.resources,
+            milestones: goal.milestones
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching goals:', error);
+        // Fallback to demo data if API fails
+        setGoals([
+          {
+            id: 1,
+            title: 'Learn React Fundamentals',
+            description: 'Master React components, hooks, and state management',
+            progress_percentage: 35,
+            duration_days: 60,
+            status: 'active',
+            category: 'Programming',
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRealGoals();
+  }, []);
+
+  const markNotificationAsRead = (id) => {
+    setNotifications(notifications.map(notif =>
+      notif.id === id ? { ...notif, is_read: true } : notif
+    ));
   };
 
-  // Mock data for demonstration
   useEffect(() => {
     setTimeout(() => {
-      setGoals([
-        {
-          id: 1,
-          title: 'Learn React Fundamentals',
-          description: 'Master React components, hooks, and state management',
-          progress_percentage: 35,
-          duration_days: 60,
-          status: 'active',
-          category: 'Programming'
-        },
-        {
-          id: 2,
-          title: 'Master SQL Database',
-          description: 'Learn advanced SQL queries and database design',
-          progress_percentage: 15,
-          duration_days: 45,
-          status: 'active',
-          category: 'Database'
-        },
-        {
-          id: 3,
-          title: 'Python for Data Science',
-          description: 'Learn data analysis with Pandas and visualization',
-          progress_percentage: 5,
-          duration_days: 90,
-          status: 'active',
-          category: 'Data Science'
-        }
-      ]);
-
       setTasks([
         {
           id: 1,
           title: 'Learn React Conditional Rendering',
           dueDate: 'Today',
           completed: false,
-          priority: 'high'
+          priority: 'high',
         },
         {
           id: 2,
           title: 'Practice SQL JOINs and Indexes',
           dueDate: 'Tomorrow',
           completed: false,
-          priority: 'medium'
+          priority: 'medium',
         },
-        {
-          id: 3,
-          title: 'Complete Pandas Data Analysis Project',
-          dueDate: 'In 2 days',
-          completed: false,
-          priority: 'medium'
-        }
       ]);
-
-      setLoading(false);
     }, 1000);
   }, []);
 
+  const canCompleteTask = (taskId) => {
+    const dependencies = {
+      2: [1],
+    }[taskId] || [];
+    const incompleteDependencies = dependencies.filter(depId => {
+      const depTask = tasks.find(t => t.id === depId);
+      return depTask && !depTask.completed;
+    });
+    return incompleteDependencies.length === 0;
+  };
+
   const handleTaskToggle = (taskId) => {
     const task = tasks.find(t => t.id === taskId);
-    
-    // validation
     if (!task.completed && !canCompleteTask(taskId)) {
-      const dependencies = {
-        2: [1],
-        3: [1, 2]
-      }[taskId] || [];
-      
+      const dependencies = { 2: [1] }[taskId] || [];
       const depNames = dependencies.map(depId => {
         const dep = tasks.find(t => t.id === depId);
         return dep ? dep.title : `Task ${depId}`;
       });
-      
       alert(`❌ Complete these tasks first: ${depNames.join(', ')}`);
       return;
     }
-    
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { ...task, completed: !task.completed }
-        : task
+    setTasks(tasks.map(task =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
     ));
   };
 
   const handleAIQuestion = (question) => {
-    // Add AI assistant functionality here
     console.log(`AI Question: ${question}`);
-    // You can integrate with your AI API here
     alert(`AI Assistant: I'll help you with "${question}"`);
   };
 
@@ -127,8 +124,26 @@ const Dashboard = () => {
         <p>Your personalized learning journey powered by AI</p>
       </div>
 
+      {showNotifications && (
+        <div className="notifications-section">
+          <div className="notification-dropdown">
+            <ul>
+              {notifications.map((notif) => (
+                <li
+                  key={notif.id}
+                  className={notif.is_read ? '' : 'unread'}
+                  onClick={() => markNotificationAsRead(notif.id)}
+                >
+                  {notif.message} ({new Date(notif.created_at).toLocaleDateString()})
+                </li>
+              ))}
+            </ul>
+            <a href="/notifications" className="view-all">View All</a>
+          </div>
+        </div>
+      )}
+
       <div className="dashboard-grid-enhanced">
-        {/* Welcome Card */}
         <div className="welcome-card glass-card">
           <div className="welcome-content">
             <h2>👋 Welcome back!</h2>
@@ -140,7 +155,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Progress Overview */}
         <div className="progress-overview glass-card">
           <h3>📊 Program Overview</h3>
           <div className="progress-stats-enhanced">
@@ -168,39 +182,19 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* AI Assistant Card */}
         <div className="ai-assistant-card glass-card">
           <h3>🤖 AI Assistant</h3>
           <p>Need help with your goals? Ask me anything!</p>
           <div className="ai-quick-questions">
-            <button 
-              className="ai-question-btn"
-              onClick={() => handleAIQuestion('team collaboration features')}
-            >
-              Team collaboration features
-            </button>
-            <button 
-              className="ai-question-btn"
-              onClick={() => handleAIQuestion('learning resources')}
-            >
+            <button className="ai-question-btn" onClick={() => handleAIQuestion('learning resources')}>
               Find learning resources
             </button>
-            <button 
-              className="ai-question-btn"
-              onClick={() => handleAIQuestion('share progress')}
-            >
-              Share progress with team
-            </button>
-            <button 
-              className="ai-question-btn"
-              onClick={() => handleAIQuestion('daily routines')}
-            >
+            <button className="ai-question-btn" onClick={() => handleAIQuestion('daily routines')}>
               Suggest study routines
             </button>
           </div>
         </div>
 
-        {/* Goals Section */}
         <div className="goals-section glass-card">
           <div className="section-header">
             <h3>🎯 Your Learning Goals</h3>
@@ -214,20 +208,18 @@ const Dashboard = () => {
                   <span className="goal-category">{goal.category}</span>
                 </div>
                 <p className="goal-description">{goal.description}</p>
-                
                 <div className="goal-progress-enhanced">
                   <div className="progress-info">
                     <span>Progress</span>
                     <span>{goal.progress_percentage}%</span>
                   </div>
                   <div className="progress-bar-enhanced">
-                    <div 
-                      className="progress-fill-enhanced" 
-                      style={{width: `${goal.progress_percentage}%`}}
+                    <div
+                      className="progress-fill-enhanced"
+                      style={{ width: `${goal.progress_percentage}%` }}
                     ></div>
                   </div>
                 </div>
-
                 <div className="goal-footer">
                   <div className="goal-meta">
                     <span>📅 {goal.duration_days} days</span>
@@ -240,7 +232,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Tasks Section */}
         <div className="tasks-section glass-card">
           <div className="section-header">
             <h3>📅 Upcoming Tasks</h3>
@@ -250,8 +241,8 @@ const Dashboard = () => {
             {tasks.map(task => (
               <div key={task.id} className="task-item">
                 <div className="task-checkbox">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={task.completed}
                     onChange={() => handleTaskToggle(task.id)}
                   />
@@ -262,28 +253,6 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
-          </div>
-          <div className="form-actions" style={{marginTop: '1rem', justifyContent: 'flex-start'}}>
-            <button className="btn-outline btn-sm">View All Tasks</button>
-          </div>
-        </div>
-
-        {/* Quick Actions Panel */}
-        <div className="ai-assistant-card glass-card" style={{gridArea: 'assistant'}}>
-          <h3>⚡ Quick Actions</h3>
-          <div className="ai-quick-questions">
-            <button className="ai-question-btn">
-              <span>📚</span> Add Resource
-            </button>
-            <button className="ai-question-btn">
-              <span>🔄</span> Update Progress
-            </button>
-            <button className="ai-question-btn">
-              <span>📊</span> Generate Report
-            </button>
-            <button className="ai-question-btn">
-              <span>👥</span> Invite Team
-            </button>
           </div>
         </div>
       </div>
