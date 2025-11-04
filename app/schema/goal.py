@@ -20,7 +20,6 @@ class LearningStyle(str, Enum):
     hands_on = "hands-on"
     mixed = "mixed"
 
-# ✅ AI PLAN MODELS
 class WeeklyScheduleItem(BaseModel):
     day: str = Field(description="Day of the week")
     topics: List[str] = Field(description="Topics to cover")
@@ -51,13 +50,12 @@ class AIPlanRequest(BaseModel):
     weekly_hours: str
     learning_style: LearningStyle
 
-# ✅ GOAL MODELS - YOUR PERFECT FIX!
 class GoalCreate(BaseModel):
     title: str = Field(..., max_length=100)
     description: str = Field(..., max_length=500)
     duration_days: int
-    start_date: Optional[date] = None      # ✅ YOUR PERFECT FIX!
-    end_date: Optional[date] = None        # ✅ YOUR PERFECT FIX!
+    start_date: Optional[date] = None     
+    end_date: Optional[date] = None        
     difficulty: Difficulty
     study_schedule: StudySchedule
     weekly_hours: str
