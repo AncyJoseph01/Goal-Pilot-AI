@@ -1,74 +1,82 @@
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
-from email.mime.text import MIMEText
-import base64
-from datetime import datetime
-from app.db import models, database
+# app/services/google_service.py
+from typing import List
+from datetime import datetime, timedelta
 import json
-import asyncio
-from app.schema.google_schema import CalendarEventCreate, EmailMessageCreate
+import logging
 
-# -------------------------------
-# Google Calendar
-# -------------------------------
-async def create_calendar_event(credentials: Credentials, event_data: CalendarEventCreate):
-    """Create a Google Calendar event asynchronously"""
-    def _create_event():
-        service = build("calendar", "v3", credentials=credentials)
-        event = {
-            "summary": event_data.summary,
-            "description": event_data.description,
-            "start": {"dateTime": event_data.start_datetime.isoformat(), "timeZone": "UTC"},
-            "end": {"dateTime": event_data.end_datetime.isoformat(), "timeZone": "UTC"},
-            "reminders": {
-                "useDefault": False,
-                "overrides": [
-                    {"method": "email", "minutes": 60*24},
-                    {"method": "popup", "minutes": 60}
-                ]
-            }
-        }
-        return service.events().insert(calendarId="primary", body=event).execute()
+from sqlalchemy import select
+from app.db.database import database
+from app.db import models
+from app.schema.google_schema import CalendarEventCreate
+from app.services.google_utils import send_email, create_calendar_event
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request as GoogleRequest
 
-    return await asyncio.to_thread(_create_event)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# -------------------------------
-# Gmail
-# -------------------------------
-async def send_email(credentials: Credentials, to: str, subject: str, body: str):
-    """Send a Gmail email asynchronously"""
-    def _send():
-        service = build("gmail", "v1", credentials=credentials)
-        message = MIMEText(body)
-        message['to'] = to
-        message['subject'] = subject
-        raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
-        message_body = {'raw': raw}
-        return service.users().messages().send(userId="me", body=message_body).execute()
 
-    return await asyncio.to_thread(_send)
+async def is_google_linked(user_id: str) -> bool:
+    user = await database.fetch_one(select(models.User.google_linked).where(models.User.id == user_id))
+    return bool(user and user["google_linked"])
 
-# -------------------------------
-# Milestone Email
-# -------------------------------
-async def send_milestone_email(user_id: str, milestone_goal: str, goal_title: str):
-    """Send a milestone reminder email"""
-    user_query = await database.fetch_one(
-        models.User.__table__.select().where(models.User.id == user_id)
-    )
-    if not user_query or not user_query.get("google_credentials"):
-        print(f"No Google credentials for user {user_id}, skipping email")
-        return
 
-    creds_data = json.loads(user_query["google_credentials"])
+async def get_user_credentials(user_id: str) -> Credentials | None:
+    user = await database.fetch_one(select(models.User).where(models.User.id == user_id))
+    if not user or not user.google_linked or not user.google_credentials:
+        return None
+
+    creds_data = json.loads(user.google_credentials)
     creds = Credentials.from_authorized_user_info(
         creds_data,
-        scopes=["https://www.googleapis.com/auth/gmail.send"]
+        scopes=[
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/gmail.send"
+        ]
     )
 
-    subject = f"Reminder: Milestone '{milestone_goal}' for '{goal_title}'"
-    body = f"Hi! This is a reminder for your milestone:\n\nGoal: {goal_title}\nMilestone: {milestone_goal}\nDate: {datetime.utcnow().date()}"
-    
-    sent = await send_email(creds, user_query["email"], subject, body)
-    print(f"Email sent to {user_query['email']} for milestone {milestone_goal}")
-    return sent
+    if creds.expired and creds.refresh_token:
+        creds.refresh(GoogleRequest())
+    return creds
+
+
+async def schedule_milestone_notifications(user_id: str, goal_title: str, milestones: List[dict]):
+    if not await is_google_linked(user_id):
+        logging.info(f"User {user_id} has not linked Google, skipping milestone notifications")
+        return
+
+    creds = await get_user_credentials(user_id)
+    if not creds:
+        logging.warning(f"No valid credentials for user {user_id}, skipping notifications")
+        return
+
+    user = await database.fetch_one(select(models.User).where(models.User.id == user_id))
+    user_email = user["email"]
+
+    for idx, milestone in enumerate(milestones, start=1):
+        try:
+            logging.info(f"Processing milestone {idx}/{len(milestones)}: {milestone['goal']}")
+
+            # Send milestone email
+            subject = f"Milestone Reminder: {milestone['goal']} for {goal_title}"
+            body = (
+                f"Hi!\n\nReminder for your milestone:\n"
+                f"Goal: {goal_title}\n"
+                f"Milestone: {milestone['goal']}\n"
+                f"Date: {datetime.utcnow().strftime('%Y-%m-%d')}\n\n"
+                "Keep up the great work!"
+            )
+            await send_email(creds, user_email, subject, body)
+
+            # Add milestone to Google Calendar
+            start_dt = datetime.utcnow()
+            end_dt = start_dt + timedelta(hours=1)
+            event_data = CalendarEventCreate(
+                summary=f"Milestone: {milestone['goal']}",
+                description=f"Goal: {goal_title}",
+                start_datetime=start_dt,
+                end_datetime=end_dt
+            )
+            await create_calendar_event(creds, event_data)
+
+        except Exception as e:
+            logging.error(f"❌ Failed milestone '{milestone['goal']}' for user {user_id}: {e}")

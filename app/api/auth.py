@@ -34,7 +34,8 @@ async def google_login():
     )
     authorization_url, state = flow.authorization_url(
         access_type="offline",   # request refresh token
-        include_granted_scopes="true"
+        include_granted_scopes="true",
+        prompt="consent"
     )
     # Save state somewhere if you want for security
     return RedirectResponse(authorization_url)
