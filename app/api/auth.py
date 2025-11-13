@@ -22,7 +22,8 @@ SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "openid",
     "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile"
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/gmail.send",
 ]
 
 # -------------------------------
@@ -35,15 +36,11 @@ async def google_login():
         scopes=SCOPES,
         redirect_uri="http://localhost:8000/auth/google/callback"
     )
-
     authorization_url, state = flow.authorization_url(
-        access_type="offline",            # request refresh token
-        include_granted_scopes="true"     # incremental auth
+        access_type="offline",   # request refresh token
+        include_granted_scopes="true",
+        prompt="consent"
     )
-
-    # For production: store `state` in session or DB to verify in callback
-    # Example: request.session['state'] = state
-
     return RedirectResponse(authorization_url)
 
 # -------------------------------
