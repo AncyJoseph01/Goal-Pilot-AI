@@ -18,6 +18,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from app.core.config import settings
+from datetime import timedelta
 
 router = APIRouter()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -98,7 +99,15 @@ async def create_goal(goal: GoalCreate, background_tasks: BackgroundTasks):
             body = f"Hi! Your learning plan for '{goal.title}' is ready.\nCheck your milestones and weekly schedule."
             background_tasks.add_task(send_email, creds, user["email"], subject, body)
 
-            # Schedule milestones
+            # Compute exact dates for milestones
+            start_date_obj = goal.start_date
+            if isinstance(start_date_obj, str):
+                start_date_obj = datetime.strptime(start_date_obj, "%Y-%m-%d")
+            for milestone in ai_plan["milestones"]:
+                milestone_date = start_date_obj + timedelta(weeks=milestone["week"] - 1)
+                milestone["date"] = milestone_date.strftime("%Y-%m-%d")
+
+            # Schedule milestones in background
             background_tasks.add_task(
                 schedule_milestone_notifications, goal.user_id, goal.title, ai_plan["milestones"]
             )
