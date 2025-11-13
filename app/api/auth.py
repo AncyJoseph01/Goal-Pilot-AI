@@ -37,7 +37,6 @@ async def google_login():
         include_granted_scopes="true",
         prompt="consent"
     )
-    # Save state somewhere if you want for security
     return RedirectResponse(authorization_url)
 
 @router.get("/google/callback")
